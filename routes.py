@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import os
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import json
+import base64
 
 app = Blueprint('api', __name__)
 
@@ -265,11 +267,57 @@ def list_projects():
 
 @app.route('/send-custom-email', methods=['POST'])
 def send_custom_email_route():
-    data = request.get_json()
+    data = {}
+    
+    # Verifica se é multipart/form-data (upload de arquivo)
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        # Processa os campos do formulário
+        form_data = request.form
+        
+        # Converte campos que devem ser listas
+        list_fields = ['recipients', 'cc', 'bcc']
+        for field in list_fields:
+            if field in form_data:
+                try:
+                    # Tenta converter de JSON primeiro
+                    data[field] = json.loads(form_data[field])
+                except (json.JSONDecodeError, TypeError):
+                    # Se não for JSON, trata como string separada por vírgula
+                    if form_data[field]:
+                        data[field] = [email.strip() for email in form_data[field].split(',') if email.strip()]
+                    else:
+                        data[field] = []
+        
+        # Copia os outros campos diretamente
+        for key, value in form_data.items():
+            if key not in list_fields and key != 'attachments' and key != 'file':
+                data[key] = value.strip() if value else None
+        
+        # Inicializa a lista de anexos
+        data['attachments'] = []
+            
+        # Processa os arquivos anexados
+        for file_key in request.files:
+            file = request.files[file_key]
+            if file and file.filename:
+                # Lê o conteúdo do arquivo binário
+                file_content = file.read()
+                # Adiciona ao array de anexos como tupla (filename, content_type, data)
+                # Sem converter para base64, mantendo os dados binários originais
+                data['attachments'].append((file.filename, file.mimetype, file_content))
+    else:
+        # Mantém o comportamento original para JSON
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Dados inválidos'}), 400
+        # Garante que attachments existe
+        data['attachments'] = data.get('attachments', [])
 
-    required_params = ['recipients', 'api_key']
-    if not all(param in data for param in required_params):
-        return jsonify({'error': f'Parâmetros obrigatórios: {required_params}'}), 400
+    # Validação dos parâmetros obrigatórios
+    required_params = ['recipients', 'api_key', 'sender']
+    missing_params = [param for param in required_params if param not in data or not data[param]]
+    if missing_params:
+        return jsonify({'error': f'Parâmetros obrigatórios ausentes: {", ".join(missing_params)}'}), 400
 
     if not isinstance(data['recipients'], list) or not all(is_valid_email(email) for email in data['recipients']):
         return jsonify({'error': 'Lista de destinatários inválida'}), 400
@@ -279,47 +327,25 @@ def send_custom_email_route():
         return jsonify({'error': 'Projeto não encontrado'}), 404
 
     try:
-        subject = data.get('subject', 'Sem assunto')
-  
-        body = data.get('body', '')
-        html_content = data.get('html_content')
-        sender = data.get('sender')
-        assert sender, 'Sender is required'
-        attachments = data.get('attachments')
-        cc = data.get('cc')
-        bcc = data.get('bcc')
-        reply_to = data.get('reply_to')
-        date = data.get('date')
-        charset = data.get('charset')
-        extra_headers = data.get('extra_headers')
-        mail_options = data.get('mail_options')
-        rcpt_options = data.get('rcpt_options')
-
         send_custom_email(
             recipients=data['recipients'],
-            subject=subject,
-            body=body,
-            html_content=html_content,
-            sender=sender,
-            attachments=attachments,
-            cc=cc,
-            bcc=bcc,
-            reply_to=reply_to,
-            date=date,
-            charset=charset,
-            extra_headers=extra_headers,
-            mail_options=mail_options,
-            rcpt_options=rcpt_options,
+            subject=data.get('subject', 'Sem assunto'),
+            body=data.get('body', ''),
+            html_content=data.get('html_content'),
+            sender=data['sender'],
+            attachments=data.get('attachments', []),
+            cc=data.get('cc', []),
+            bcc=data.get('bcc', []),
+            reply_to=data.get('reply_to'),
             project=project
         )
 
         return jsonify({
             'message': 'Email enviado com sucesso',
             'details': {
-                'recipients_count': len(data['recipients']),
-                'subject': subject,
-                'api_key': data['api_key'],
-                'project_name': project.name
+                'recipients': data['recipients'],
+                'subject': data.get('subject', 'Sem assunto'),
+                'attachments': [att[0] for att in data.get('attachments', [])]
             }
         }), 200
 

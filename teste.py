@@ -1,33 +1,34 @@
-import smtplib
-import ssl
-from email.mime.text import MIMEText
+import requests
+import json
 
-# Configurações do email
-subject = "emproho"
-body = "Este é o corpo da mensagem."
-sender = "contato@jm2.tec.br"
-recipients = ["marcosayres.brasil@gmail.com"]
-password = "tNd9MPYpf0Yt"  # sua senha Zoho
+# URL do seu endpoint
+url = 'http://127.0.0.1:5000/api/send-custom-email'
 
-def send_email_starttls_with_context(subject, body, sender, recipients, password):
-    # Cria o objeto MIMEText
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = ", ".join(recipients)
+# O dicionário com os dados do e‑mail
+payload = {
+    "api_key": "U31TAJJ0MzIomTFIUtbDIXjG4jT0lCaI",
+    "recipients": ["gtasanandreasuf@gmail.com"],
+    "subject": "Exemplo de Email com Anexo",
+    "body": "Olá,\n\nEste é um exemplo de e-mail com anexo.\n\nAtenciosamente,\nEquipe",
+    "html_content": "<h1>Exemplo de Email com Anexo</h1>\n<p>Olá,</p>\n<p>Este é um exemplo de e-mail com anexo.</p>\n<p>Atenciosamente,<br>Equipe</p>",
+    "sender": "contato@pgeda.com.br"
+}
 
-    # Cria um contexto SSL que usa os certificados raíz do sistema
-    context = ssl.create_default_context()
+# Serializa o payload pra string JSON
+data = {
+    'payload': json.dumps(payload)
+}
 
-    # Conecta em texto claro na porta 587 e faz upgrade para TLS usando o contexto
-    with smtplib.SMTP("smtp.zoho.com", 587) as smtp:
-        smtp.ehlo()  # identifica o cliente para o servidor
-        smtp.starttls(context=context)  # sobe para TLS
-        smtp.ehlo()  # re-identifica já em TLS
-        smtp.login(sender, password)  # faz login
-        smtp.sendmail(sender, recipients, msg.as_string())  # envia mensagem
+# Abre o(s) arquivo(s) que você quer anexar
+# Se quiser múltiplos anexos, repita na dict files:
+files = {
+    'attachments': open('teste_oportunidade_jovem1.pdf', 'rb')
+    # 'attachments': open('outro.pdf','rb'),  # pra mais de 1 anexo
+}
 
-    print("Email enviado com STARTTLS + SSLContext na porta 587!")
+# Faz o POST
+response = requests.post(url, data=data, files=files)
 
-if __name__ == "__main__":
-    send_email_starttls_with_context(subject, body, sender, recipients, password)
+# Verifica o retorno
+print(response.status_code)
+print(response.json())

@@ -2,6 +2,7 @@ import re
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
+import base64
 
 mail = Mail()
 serializer = URLSafeTimedSerializer('chave_temporaria') 
@@ -102,26 +103,41 @@ def send_custom_email(recipients, subject, body,
 
     if attachments:
         for attachment in attachments:
-            msg.attach(*attachment)
-        
+            if len(attachment) == 3:
+                filename, content_type, data = attachment
+                # Se os dados estiverem em base64, decodifica
+                if isinstance(data, str):
+                    try:
+                        data = base64.b64decode(data)
+                    except Exception:
+                        pass  # Se não for base64, assume que já está nos bytes corretos
+                # Anexa o arquivo
+                msg.attach(filename=filename, 
+                          content_type=content_type,
+                          data=data)
+    
     msg.reply_to = sender
 
-    if project and project.mail_username and project.mail_password:
-        # Configurar o Flask-Mail com as credenciais do projeto
-        current_app.config['MAIL_USERNAME'] = project.mail_username
-        current_app.config['MAIL_PASSWORD'] = project.mail_password
-        
-        # Criar uma nova instância do Mail com as configurações atualizadas
-        project_mail = Mail(current_app)
-        project_mail.send(msg)
-    else:
-        mail.send(msg)
-        
-    unsub_domain = (sender).split('@')[-1]
-    msg.extra_headers = {**(msg.extra_headers or {}), 'List-Unsubscribe': f'<mailto:unsubscribe@{unsub_domain}>'}
-    
     try:
-        pass
+        if project and project.mail_username and project.mail_password:
+            # Configurar o Flask-Mail com as credenciais do projeto
+            current_app.config['MAIL_USERNAME'] = project.mail_username
+            current_app.config['MAIL_PASSWORD'] = project.mail_password
+            
+            # Criar uma nova instância do Mail com as configurações atualizadas
+            project_mail = Mail(current_app)
+            project_mail.send(msg)
+        else:
+            mail.send(msg)
+            
+        # Adiciona cabeçalho de cancelamento de inscrição
+        unsub_domain = (sender or '').split('@')[-1]
+        if unsub_domain:
+            msg.extra_headers = {**(msg.extra_headers or {}), 
+                              'List-Unsubscribe': f'<mailto:unsubscribe@{unsub_domain}>'}
+            
+        return True
+        
     except Exception as e:
-        print(f"Erro ao enviar email: {str(e)}")
+        current_app.logger.error(f"Erro ao enviar email: {str(e)}")
         raise
