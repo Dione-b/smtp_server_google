@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gerenciador de Projetos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="protected">
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="navbar-brand">
+                <i class="fas fa-envelope-circle-check"></i>
+                Validador de Email
+            </a>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-tab="dashboard">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="projects">
+                        <i class="fas fa-project-diagram"></i> Projetos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tab="create">
+                        <i class="fas fa-plus-circle"></i> Novo Projeto
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" id="logout-btn" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div id="alert-container"></div>
+        
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <section class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="stat-title">Total de Projetos</div>
+                        <div class="stat-value" id="total-projects">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="stat-title">Emails Verificados</div>
+                        <div class="stat-value" id="verified-emails">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-paper-plane"></i>
+                        </div>
+                        <div class="stat-title">Emails Enviados</div>
+                        <div class="stat-value" id="sent-emails">0</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Projetos Recentes</h3>
+                        <a href="#" class="btn btn-outline-primary btn-sm" data-tab="projects">
+                            <i class="fas fa-eye"></i> Ver Todos
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div id="recent-projects" class="project-list">
+                            <!-- Projetos recentes serão carregados aqui -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- Projects Tab -->
+        <div id="projects-tab" class="tab-content">
+            <section class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-project-diagram"></i> Meus Projetos
+                </h2>
+                
+                <div id="project-list" class="project-list">
+                    <!-- Os projetos serão carregados aqui via JavaScript -->
+                </div>
+            </section>
+        </div>
+        
+        <!-- Create Project Tab -->
+        <div id="create-tab" class="tab-content">
+            <section class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-plus-circle"></i> Criar Novo Projeto
+                </h2>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <form id="create-project-form">
+                            <div class="form-group">
+                                <label for="project-name" class="form-label">Nome do Projeto</label>
+                                <input type="text" id="project-name" class="form-control" required>
+                                <small class="form-text">Nome que identifica seu projeto</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="project-description" class="form-label">Descrição</label>
+                                <textarea id="project-description" class="form-control" rows="3"></textarea>
+                                <small class="form-text">Uma breve descrição do seu projeto</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="mail-username" class="form-label">Email para Envio</label>
+                                <input type="email" id="mail-username" class="form-control">
+                                <small class="form-text">Email que será usado para enviar as verificações</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="mail-password" class="form-label">Senha do Email</label>
+                                <input type="password" id="mail-password" class="form-control">
+                                <small class="form-text">Senha de aplicativo para o email acima</small>
+                            </div>
+                            
+                            <div class="form-group text-right">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Criar Projeto
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
