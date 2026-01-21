@@ -2,9 +2,13 @@
 users.db
 instance/users.db
 
-# Ignorar arquivos de ambiente
+# Ignorar variáveis de ambiente
 .env
 .venv
+
+# Ignorar ambiente virtual
+env/
+venv/
 
 # Ignorar caches do Python
 __pycache__/
